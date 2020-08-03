@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Leaflet</title>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"
+    />
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <script
+      src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+      integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+  </head>
+  <body>
+    <div id="mapid"></div>
+
+    <script>
+      map = L.map("mapid", {
+        center: [51.9, -0.9],
+        zoom: 11,
+        maxZoom: 18,
+      });
+
+      // Marker styles
+      var blankMarker = L.icon({
+        iconUrl: "markers/blankMarker.svg",
+        iconSize: [38, 95],
+        iconAnchor: [18.5, 68.5],
+      });
+      var aMarker = L.icon({
+        iconUrl: "markers/aMarker.svg",
+        iconSize: [38, 95],
+        iconAnchor: [18.5, 68.5],
+      });
+
+      var bMarker = L.icon({
+        iconUrl: "markers/bMarker.svg",
+        iconSize: [38, 95],
+        iconAnchor: [18.5, 68.5],
+      });
+
+      var invisibleMarker = L.icon({
+        iconUrl: "marker.svg",
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+      });
+
+      // Generate locations
+      locations = [];
+
+      for (let i = 0; i < 5; i++) {
+        const location = new Object();
+        location.id = i;
+        location.aLat = 51.9;
+        location.aLng = -1 + i / 10;
+
+        location.bLat = 52;
+        location.bLng = -1 + i / 10;
+        locations.push(location);
+      }
+
+      // Set Marker group
+      var cluster = L.markerClusterGroup();
+      var marker;
+
+      for (let i = 0; i < locations.length; i++) {
+        // Add marker
+        marker = L.marker([locations[i].aLat, locations[i].aLng], {
+          icon: blankMarker,
+          options: {
+            id: locations[i].id,
+          },
+        });
+        marker.on("mouseover", onMarkerMouseOver);
+        marker.on("mouseout", onMarkerMouseLeave);
+        marker.on("click", onMarkerMouseClick);
+
+        cluster.addLayer(marker);
+      }
+
+      map.addLayer(cluster);
+
+      function onMarkerMouseOver(e) {
+        e.target.setIcon(aMarker);
+        createRoute(locations[e.target.options.options.id]);
+      }
+      function onMarkerMouseLeave(e) {
+        e.target.setIcon(blankMarker);
+        index = e.target.options.options.id;
+        locations[index].route.remove();
+      }
+      function onMarkerMouseClick(e) {
+        console.log("Needs to be implemented");
+      }
+
+      function createRoute(locations) {
+        route = L.Routing.control({
+          show: false,
+          addWaypoints: false,
+          draggableWaypoints: false,
+          fitSelectedRoutes: false,
+          waypoints: [
+            L.latLng(locations.aLat, locations.aLng),
+            L.latLng(locations.bLat, locations.bLng),
+          ],
+          lineOptions: {
+            styles: [{ color: "green", opacity: 1, weight: 5 }],
+          },
+          createMarker: function (i, wp, nWps) {
+            if (i === 0) {
+              // First marker
+              return L.marker(wp.latLng, {
+                icon: invisibleMarker,
+              });
+            } else {
+              // Last marker
+              return L.marker(wp.latLng, {
+                icon: bMarker,
+              });
+            }
+          },
+        });
+        locations.route = route;
+        route.addTo(map);
+        return route;
+      }
+      // Tile layer
+      L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw",
+        {
+          maxZoom: 18,
+          attribution:
+            'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          id: "mapbox/streets-v11",
+          tileSize: 512,
+          zoomOffset: -1,
+        }
+      ).addTo(map);
+    </script>
+  </body>
+</html>
